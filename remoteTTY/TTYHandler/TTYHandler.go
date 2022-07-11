@@ -2,7 +2,6 @@ package TTYHandler
 
 import (
 	"log"
-	"strings"
 
 	"github.com/tarm/serial"
 )
@@ -33,7 +32,8 @@ func NewPortWorker(port string, bauld int) PortWorker {
 func (p *PortWorker) Start() {
 	s, err := serial.OpenPort(&p.Config)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 	p.IsWorking = true
 	go Reader(s, p.ReadPipe, p.stopReadPipe)
@@ -47,7 +47,7 @@ func (p *PortWorker) Stop() {
 }
 
 func Reader(s *serial.Port, pipe chan string, stop chan int) {
-	handler := NewReadHandler(pipe)
+	//handler := NewReadHandler(pipe)
 	for {
 		select {
 		case <-stop:
@@ -58,27 +58,28 @@ func Reader(s *serial.Port, pipe chan string, stop chan int) {
 			if err != nil {
 				log.Fatal(err)
 			} else if n > 0 {
-				handler(string(buf[:n]))
+				pipe <- string(buf[:n])
+				//handler(string(buf[:n]))
 			}
 		}
 	}
 }
 
-func NewReadHandler(pipe chan string) func(data string) { // handler removes all \r and \n, split lines by \n and throw it to pipe
-	buff := ""
-	return func(data string) {
-		data = strings.Replace(data, string('\r'), "", -1)
-		buff += data
-		for endlPos := strings.IndexByte(buff, '\n'); endlPos >= 0; {
-			msg := buff[0:endlPos]
-			buff = buff[endlPos+1:]
-			endlPos = strings.IndexByte(buff, '\n')
-			if len(msg) > 0 {
-				pipe <- msg
-			}
-		}
-	}
-}
+// func NewReadHandler(pipe chan string) func(data string) { // handler removes all \r and \n, split lines by \n and throw it to pipe
+// 	buff := ""
+// 	return func(data string) {
+// 		data = strings.Replace(data, string('\r'), "", -1)
+// 		buff += data
+// 		for endlPos := strings.IndexByte(buff, '\n'); endlPos >= 0; {
+// 			msg := buff[0:endlPos]
+// 			buff = buff[endlPos+1:]
+// 			endlPos = strings.IndexByte(buff, '\n')
+// 			if len(msg) > 0 {
+// 				pipe <- msg
+// 			}
+// 		}
+// 	}
+// }
 
 func Writer(s *serial.Port, pipe chan string, stop chan int) {
 	for {

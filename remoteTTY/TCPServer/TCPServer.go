@@ -50,7 +50,7 @@ func (*Server) handleIncomingRequest(conn net.Conn) {
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 			conn.Close()
 		}
 		msg := string(buffer[:n])
